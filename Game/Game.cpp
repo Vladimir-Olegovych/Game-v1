@@ -5,11 +5,20 @@
 #include <windows.h>
 #include <gdiplus.h>
 
+
+
 void draw(HDC hdc);
 
 //uint_16 max 65535
 const UINT16 height = 500;
 const UINT16 width = 1000;
+UINT8 speed = 25;
+
+short x = 50, y = 50;
+
+
+
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
@@ -78,27 +87,59 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     PAINTSTRUCT ps;
 
     switch (uMsg) {
-
-        case WM_PAINT: {
-            hdc = BeginPaint(hwnd, &ps);
-            //Render
-            draw(hdc);
-
-            return 0;
-        }
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;
-                     return 0;
+
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+        {
+            UINT32 VKCode = wParam;
+            //ESC
+            if (VKCode == 0x1B) {
+                exit(0);
+            }
+            //W
+            if (VKCode == 0x57) {
+                RedrawWindow(hwnd, NULL, NULL, uMsg);
+                y -= speed;
+            }
+            //S
+            if (VKCode == 0x53) {
+                RedrawWindow(hwnd, NULL, NULL, uMsg);
+                y += speed;
+               
+            }
+            //A
+            if (VKCode == 0x41) {
+                RedrawWindow(hwnd, NULL, NULL, uMsg);
+                x -= speed;
+            }
+            //D
+            if (VKCode == 0x44) {
+                RedrawWindow(hwnd, NULL, NULL, uMsg);
+                x += speed;
+            }
+            break;
+        }
+
+        case WM_PAINT: {
+            hdc = BeginPaint(hwnd, &ps);
+            draw(hdc);
+            EndPaint(hwnd, &ps);
+        }
+
+        return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
+
 void draw(HDC hdc) {
-    boolean ads = true;
     Gdiplus::Graphics gf(hdc);
-    Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0));
-    for (int i = 0; i < 1000; i++) {
-        gf.DrawLine(&pen, i, 500, i, rand() % height);
-    }
+    Gdiplus::SolidBrush brush(Gdiplus::Color(255, 255, 0, 0));
+    //Gdiplus::SolidBrush delBrush(Gdiplus::Color(255, 255, 255, 255));
+    gf.FillRectangle(&brush, x, y, 50, 50);
 }
