@@ -21,6 +21,7 @@ struct Snake {
 };
 struct Apple {
     boolean spawned = true;
+    UINT16 size = 10;
     short x = 0;
     short y = 0;
 };
@@ -28,9 +29,9 @@ struct Apple {
 void drawSnake(HDC hdc);
 void drawApple(HDC hdc);
 //const
-const UINT16 height = 950;
-const UINT16 width = 1900;
-const UINT8 speed = 25;
+const UINT16 height = GetSystemMetrics(SM_CYSCREEN)-40;
+const UINT16 width = GetSystemMetrics(SM_CXSCREEN);
+const UINT8 speed = 26;
 //snake logic
 Snake snake;
 Apple apple;
@@ -58,7 +59,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)S_WHITE2048;
+    wc.hbrBackground = (HBRUSH)COLOR_BTNHIGHLIGHT;
     wc.hInstance = hInstance;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
@@ -74,8 +75,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         L"(Snake's game)",   // Window text
         WS_OVERLAPPEDWINDOW,       // Window style
 
-        CW_USEDEFAULT,  //0
-        CW_USEDEFAULT,  //0
+        0,  //CW_USEDEFAULT
+        0,  //CW_USEDEFAULT
         width,
         height,
 
@@ -118,6 +119,17 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             //ESC
             if (wParam == 0x1B) {
                 exit(0);
+                break;
+            }
+            //Space
+            if (wParam == 0x20) {
+                apple.spawned = true;
+                RedrawWindow(hwnd, NULL, NULL, uMsg);
+                break;
+            }
+            //Tab
+            if (wParam == 0x09) {
+                snake.maxEnumSnake += 5;
                 break;
             }
             //W
@@ -174,21 +186,26 @@ void drawApple(HDC hdc) {
     apple.spawned = false;
 
     random_device rd;
-    uniform_int_distribution<short> distX(1, width-70);
-    uniform_int_distribution<short> distY(1, height-70);
+    uniform_int_distribution<short> distX(1, width-200);
+    uniform_int_distribution<short> distY(1, height-200);
+    uniform_int_distribution<short> distA(5, 110);
 
-    uniform_int_distribution<short> distA(10, 100);
-
+    apple.size = distA(rd);
     apple.x = distX(rd);
     apple.y = distY(rd);
 
-    gf.FillEllipse(&brush, apple.x, apple.y, distA(rd), distA(rd));
+    if (apple.size <= 15) brush.SetColor(Color(255, 255, 0, 0));
+    if (apple.size > 50 && apple.size < 100) brush.SetColor(Color(255, 0, 255, 0));
+    if (apple.size >= 100) brush.SetColor(Color(255, 0, 255, 255));
+
+
+    gf.FillEllipse(&brush, apple.x, apple.y, apple.size, apple.size);
 }
 
 void drawSnake(HDC hdc) {
     Graphics gf(hdc);
     SolidBrush brush(Color(100, 255, 0, 0));
-    SolidBrush delBrush(Color(255, 255, 255, 255));
+    SolidBrush delBrush(Color(150, 10, 0, 0));
 
     //SnakeLogic
     gf.FillRectangle(&brush, x, y, 50, 50);
@@ -199,8 +216,10 @@ void drawSnake(HDC hdc) {
     }
 
     //EatAppleLogic - "math pizdec"
-    if ((sqrt(pow(apple.x-x,2)+pow(apple.y-y,2))) <= 50){
-        snake.maxEnumSnake += 3;
+    if ((sqrt(pow(apple.x-x,2)+pow(apple.y-y,2))) <= 100){
+        if (apple.size <= 12) exit(0);
+        if (apple.size > 15 && apple.size < 100) snake.maxEnumSnake += 2;
+        if (apple.size >= 100) snake.maxEnumSnake += 10;
         apple.spawned = true;
     }
 }
